@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>مطعم البرنس السوري</title>
+<meta name="description" content="مطعم البرنس السوري - أشهى المشويات والشاورما والبروستد في الجيزة. اطلب الآن عبر واتساب!"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com"></script>
+<!-- Firebase v10 CDN (modular via compat shim for simplicity) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+tailwind.config={theme:{extend:{colors:{
+  sage:{50:"#f4f7f4",100:"#e2ebe2",200:"#c4d6c5",300:"#9bb99d",400:"#6e9671",500:"#4d7850",600:"#3b5f3e",700:"#304d33",800:"#273e2a",900:"#1e3021"},
+  mustard:{50:"#fdf9ec",100:"#faf0cc",200:"#f4de95",300:"#edc755",400:"#e6b12a",500:"#c98f15",600:"#a86f10",700:"#855110",800:"#6e4014"}
+},fontFamily:{cairo:["Cairo","sans-serif"]}}}};
+</script>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{scroll-behavior:smooth}
+body{font-family:'Cairo',sans-serif;background:#faf8f3;color:#1e3021;overflow-x:hidden}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:#e2ebe2}
+::-webkit-scrollbar-thumb{background:#4d7850;border-radius:10px}
+.hero-bg{background-color:#1e3021;background-image:radial-gradient(circle at 20% 50%,rgba(77,120,80,.25) 0%,transparent 50%),radial-gradient(circle at 80% 20%,rgba(200,143,21,.18) 0%,transparent 45%)}
+@keyframes floatUp{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideUp{from{transform:translateY(60px);opacity:0}to{transform:translateY(0);opacity:1}}
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+.float-anim{animation:floatUp 3s ease-in-out infinite}
+.section-panel{display:none}
+.section-panel.active{display:block;animation:fadeIn .3s ease}
+.tabs-scroll{overflow-x:auto;white-space:nowrap;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.tabs-scroll::-webkit-scrollbar{display:none}
+.tab-btn{display:inline-flex;align-items:center;gap:5px;padding:9px 18px;border-radius:50px;font-size:13.5px;font-weight:600;cursor:pointer;transition:all .22s;border:2px solid transparent;white-space:nowrap;font-family:'Cairo',sans-serif}
+.tab-btn.active{background:#4d7850;color:#fff;box-shadow:0 4px 14px rgba(77,120,80,.35)}
+.tab-btn:not(.active){background:#fff;color:#4d7850;border-color:#c4d6c5}
+.tab-btn:not(.active):hover{background:#e2ebe2}
+.menu-card{background:#fff;border-radius:16px;box-shadow:0 2px 12px rgba(30,48,33,.08);transition:all .22s;cursor:pointer;overflow:hidden;border:1.5px solid #e2ebe2}
+.menu-card:hover{transform:translateY(-3px);box-shadow:0 8px 22px rgba(30,48,33,.14);border-color:#9bb99d}
+.menu-card:active{transform:scale(.97)}
+.unavailable-card{opacity:.5;cursor:not-allowed}
+.unavailable-card:hover{transform:none;box-shadow:0 2px 12px rgba(30,48,33,.08)}
+.price-badge{background:linear-gradient(135deg,#c98f15,#e6b12a);color:#1e3021;font-weight:800;border-radius:11px;padding:4px 13px;font-size:14.5px;display:inline-block}
+.modal-overlay{position:fixed;inset:0;background:rgba(10,20,12,.78);backdrop-filter:blur(5px);z-index:1000;display:flex;align-items:flex-end;justify-content:center}
+@media(min-width:640px){.modal-overlay{align-items:center}}
+.modal-box{background:#fff;border-radius:26px 26px 0 0;width:100%;max-width:540px;max-height:92vh;overflow-y:auto;animation:slideUp .35s cubic-bezier(.34,1.56,.64,1)}
+@media(min-width:640px){.modal-box{border-radius:22px}}
+.modal-box::-webkit-scrollbar{display:none}
+.wa-order-btn{display:flex;align-items:center;justify-content:center;gap:10px;background:linear-gradient(135deg,#1DA851,#25D366);color:#fff;border-radius:15px;padding:15px;font-size:16px;font-weight:700;width:100%;cursor:pointer;border:none;transition:all .2s;box-shadow:0 4px 16px rgba(37,211,102,.38);font-family:'Cairo',sans-serif}
+.wa-order-btn:hover{box-shadow:0 6px 22px rgba(37,211,102,.55);transform:translateY(-1px)}
+.size-btn{padding:7px 15px;border-radius:10px;border:2px solid #c4d6c5;background:#fff;color:#304d33;font-family:'Cairo',sans-serif;font-weight:600;font-size:13px;cursor:pointer;transition:all .2s}
+.size-btn.selected{background:#4d7850;color:#fff;border-color:#4d7850}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1.5px solid #e2ebe2;z-index:500;display:flex;box-shadow:0 -4px 18px rgba(30,48,33,.09)}
+.bottom-nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 4px 8px;cursor:pointer;transition:all .2s;gap:3px;border:none;background:none;font-family:'Cairo',sans-serif}
+.bottom-nav-item .nav-icon{font-size:21px;transition:all .2s;color:#9bb99d}
+.bottom-nav-item .nav-label{font-size:11px;font-weight:500;color:#9bb99d}
+.bottom-nav-item.active .nav-icon{color:#4d7850;transform:translateY(-2px)}
+.bottom-nav-item.active .nav-label{color:#4d7850;font-weight:700}
+.fab-wa{position:fixed;bottom:88px;left:18px;z-index:499;width:56px;height:56px;background:#25D366;border-radius:50%;box-shadow:0 4px 20px rgba(37,211,102,.5);display:flex;align-items:center;justify-content:center;cursor:pointer;animation:floatUp 3s ease-in-out infinite;text-decoration:none;transition:transform .2s}
+.fab-wa:hover{transform:scale(1.1)}
+.stat-card{background:linear-gradient(135deg,#304d33,#4d7850);border-radius:18px;color:#fff;padding:20px 15px}
+.phone-chip{display:inline-flex;align-items:center;gap:7px;background:#e2ebe2;border-radius:50px;padding:7px 16px;font-weight:600;color:#304d33;font-size:13.5px;cursor:pointer;transition:all .2s;border:2px solid transparent;text-decoration:none;font-family:'Cairo',sans-serif}
+.phone-chip:hover{background:#4d7850;color:#fff}
+.offer-badge{background:linear-gradient(135deg,#304d33,#4d7850);color:#faf0cc;font-size:11px;font-weight:700;padding:2px 9px;border-radius:20px;display:inline-block}
+.pb-nav{padding-bottom:82px}
+.stars{color:#e6b12a}
+main > section{scroll-margin-top:70px}
+.section-title{position:relative;display:inline-block}
+.section-title::after{content:'';position:absolute;bottom:-5px;right:0;width:55%;height:3px;background:linear-gradient(90deg,#c98f15,transparent);border-radius:2px}
+.lc2{display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+/* Skeleton loading */
+.skeleton{background:linear-gradient(90deg,#e2ebe2 25%,#c4d6c5 50%,#e2ebe2 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:10px}
+/* Working hours styles */
+.hours-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #e2ebe2}
+.hours-row:last-child{border-bottom:none}
+.hours-row.today{background:#e2ebe2;border-radius:10px;padding:10px 14px;margin:-2px -6px;border-bottom:none}
+.open-badge{display:inline-flex;align-items:center;gap:4px;background:#d4edda;color:#1a7340;font-size:12px;font-weight:700;padding:3px 10px;border-radius:20px}
+.closed-badge{display:inline-flex;align-items:center;gap:4px;background:#fde8e8;color:#c0392b;font-size:12px;font-weight:700;padding:3px 10px;border-radius:20px}
+.now-open-pulse{width:8px;height:8px;border-radius:50%;background:#1a7340;display:inline-block;animation:pulse-dot 2s infinite}
+@keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.6;transform:scale(1.3)}}
+/* Toast notification */
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#1e3021;color:#fff;padding:12px 24px;border-radius:14px;font-size:14px;font-weight:600;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none;font-family:'Cairo',sans-serif;white-space:nowrap}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<!-- Loading Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- NAV / HERO -->
+<header id="home" class="hero-bg text-white relative overflow-hidden" style="min-height:100svh">
+  <nav class="sticky top-0 z-50" style="background:rgba(30,48,33,0.93);backdrop-filter:blur(10px);border-bottom:1px solid rgba(77,120,80,0.3)">
+    <div class="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-full flex items-center justify-center font-black text-xl shadow-lg" style="background:linear-gradient(135deg,#e6b12a,#c98f15);color:#1e3021">ب</div>
+        <div>
+          <p class="font-black text-base leading-tight text-white">مطعم البرنس السوري</p>
+          <p class="text-xs font-medium" style="color:#edc755">Al-Brens El-Soury</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <span id="open-status-nav" class="text-xs font-bold hidden"></span>
+        <a href="tel:01210226682" class="flex items-center gap-2 font-bold text-sm px-4 py-2 rounded-full" style="background:#c98f15;color:#1e3021;text-decoration:none">&#x1F4DE; اتصل</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="max-w-5xl mx-auto px-4 pt-10 pb-28 text-center relative z-10">
+    <div class="inline-flex items-center gap-2 rounded-full px-5 py-2 text-sm font-semibold mb-6" style="background:rgba(200,143,21,0.18);border:1px solid rgba(200,143,21,0.4);color:#faf0cc">
+      &#x2B50; الأصيل في طعم المشويات السورية
+    </div>
+    <div class="mx-auto w-32 h-32 rounded-full flex items-center justify-center shadow-2xl mb-6 float-anim" style="background:linear-gradient(135deg,#e6b12a,#c98f15);border:4px solid rgba(230,177,42,0.3)">
+      <span class="text-5xl">&#x1F451;</span>
+    </div>
+    <h1 class="font-black text-white mb-2 leading-tight" style="font-size:clamp(26px,7vw,46px)">مطعم البرنس السوري</h1>
+    <p class="text-lg font-semibold mb-2" style="color:#edc755">Al-Brens El-Soury Restaurant</p>
+    <p class="text-base mb-8 max-w-sm mx-auto leading-relaxed" style="color:#9bb99d">مشويات &#x2022; بروستد &#x2022; شاورما &#x2022; وجبات غربية<br/><span style="color:#faf0cc">تجربة طعام أصيلة لا تُنسى</span></p>
+    <!-- Live open/closed status -->
+    <div id="hero-status" class="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold mb-6" style="background:rgba(255,255,255,0.1)">
+      <span class="now-open-pulse"></span>
+      <span id="hero-status-text">جاري التحقق من ساعات العمل...</span>
+    </div>
+    <div class="flex items-center justify-center gap-1 mb-8">
+      <span class="stars text-2xl">&#x2605;&#x2605;&#x2605;&#x2605;&#x2605;</span>
+      <span class="text-sm mr-2" style="color:#9bb99d">تقييم عملاءنا</span>
+    </div>
+    <div class="flex flex-col sm:flex-row gap-3 justify-center items-center">
+      <button onclick="scrollToMenu()" class="w-full sm:w-auto flex items-center justify-center gap-2 font-black text-lg px-8 py-4 rounded-2xl shadow-lg transition-all hover:opacity-90" style="background:#c98f15;color:#1e3021">&#x1F37D;&#xFE0F; استعرض المنيو</button>
+      <a href="https://wa.me/201210226682" target="_blank" rel="noopener" class="w-full sm:w-auto flex items-center justify-center gap-2 font-black text-lg px-8 py-4 rounded-2xl shadow-lg" style="background:#25D366;color:#fff;text-decoration:none">
+        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.083.534 4.044 1.472 5.759L.053 23.25a.75.75 0 0 0 .916.972l5.68-1.486A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.967 0-3.807-.538-5.384-1.47l-.383-.229-3.973 1.04 1.058-3.861-.248-.396A9.945 9.945 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+        اطلب واتساب
+      </a>
+    </div>
+    <div class="grid grid-cols-3 gap-3 mt-10 max-w-sm mx-auto">
+      <div class="rounded-2xl p-3 text-center" style="background:rgba(255,255,255,0.1)"><div class="text-2xl mb-1">&#x1F680;</div><div class="text-xs font-semibold" style="color:#c4d6c5">توصيل سريع</div></div>
+      <div class="rounded-2xl p-3 text-center" style="background:rgba(255,255,255,0.1)"><div class="text-2xl mb-1">&#x1F525;</div><div class="text-xs font-semibold" style="color:#c4d6c5">طازج يومياً</div></div>
+      <div class="rounded-2xl p-3 text-center" style="background:rgba(255,255,255,0.1)"><div class="text-2xl mb-1">&#x1F4AF;</div><div class="text-xs font-semibold" style="color:#c4d6c5">جودة مضمونة</div></div>
+    </div>
+  </div>
+  <div class="absolute bottom-0 left-0 right-0" style="line-height:0">
+    <svg viewBox="0 0 1440 70" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" style="width:100%;height:55px;display:block"><path d="M0,35 C360,70 1080,0 1440,35 L1440,70 L0,70 Z" fill="#faf8f3"/></svg>
+  </div>
+</header>
+
+<main class="pb-nav">
+
+<!-- MENU -->
+<section id="menu" class="py-8">
+  <div class="max-w-5xl mx-auto px-4">
+    <div class="mb-6">
+      <h2 class="text-2xl font-black section-title" style="color:#273e2a">قائمة الطعام</h2>
+      <p class="text-sm mt-3" style="color:#6e9671">اضغط على أي وجبة لعرض التفاصيل والطلب عبر واتساب &#x1F6D2;</p>
+    </div>
+    <!-- Dynamic Tabs -->
+    <div class="tabs-scroll pb-3 mb-6" id="tabs-container">
+      <div class="flex gap-2 py-1" id="tabs-bar">
+        <div class="skeleton h-10 w-24 rounded-full inline-block"></div>
+        <div class="skeleton h-10 w-24 rounded-full inline-block"></div>
+        <div class="skeleton h-10 w-20 rounded-full inline-block"></div>
+        <div class="skeleton h-10 w-24 rounded-full inline-block"></div>
+      </div>
+    </div>
+    <!-- Panels container - built dynamically -->
+    <div id="panels-container"></div>
+  </div>
+</section>
+
+<!-- WORKING HOURS SECTION -->
+<section id="hours" class="py-8" style="background:#f4f7f4">
+  <div class="max-w-5xl mx-auto px-4">
+    <div class="mb-6">
+      <h2 class="text-2xl font-black section-title" style="color:#273e2a">&#x1F55B; ساعات العمل</h2>
+      <p class="text-sm mt-3" style="color:#6e9671">نستقبلكم طوال أيام الأسبوع بكل سرور</p>
+    </div>
+    <div class="bg-white rounded-2xl shadow-sm border overflow-hidden" style="border-color:#e2ebe2">
+      <!-- Open Now Banner -->
+      <div id="open-now-banner" class="p-4 text-center font-bold text-sm" style="display:none"></div>
+      <!-- Hours Grid -->
+      <div class="p-5" id="hours-grid">
+        <!-- Skeleton -->
+        <div class="skeleton h-8 w-full mb-3 rounded-lg"></div>
+        <div class="skeleton h-8 w-full mb-3 rounded-lg"></div>
+        <div class="skeleton h-8 w-full rounded-lg"></div>
+      </div>
+      <div class="mx-5 mb-5 rounded-xl p-4" style="background:#fdf9ec;border:1px solid #f4de95">
+        <p class="text-sm font-bold" style="color:#855110">&#x1F69A; توصيل الطلبات</p>
+        <p class="text-sm mt-1" style="color:#6e4014">يبدأ توصيل الطلبات من الساعة 9 صباحاً حتى 2 صباحاً</p>
+      </div>
+      <!-- Note -->
+      <div class="px-5 pb-5">
+        <p class="text-xs text-center" style="color:#9bb99d">&#x2139;&#xFE0F; الأوقات قابلة للتغيير في المناسبات والإجازات</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- OFFERS -->
+<section id="offers" class="py-8" style="background:linear-gradient(135deg,#273e2a,#1e3021)">
+  <div class="max-w-5xl mx-auto px-4">
+    <div class="mb-6">
+      <h2 class="text-2xl font-black text-white section-title">&#x1F389; العروض الخاصة</h2>
+      <p class="text-sm mt-3" style="color:#9bb99d">وفّر أكثر مع عروضنا الحصرية</p>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" id="offers-grid">
+      <div class="skeleton rounded-2xl" style="height:160px"></div>
+      <div class="skeleton rounded-2xl" style="height:160px"></div>
+      <div class="skeleton rounded-2xl" style="height:160px"></div>
+    </div>
+  </div>
+</section>
+
+<!-- WHY US -->
+<section class="py-10">
+  <div class="max-w-5xl mx-auto px-4">
+    <h2 class="text-2xl font-black section-title mb-8" style="color:#273e2a">لماذا البرنس السوري؟</h2>
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div class="text-center p-5 bg-white rounded-2xl shadow-sm border" style="border-color:#e2ebe2"><div class="text-4xl mb-3">&#x1F525;</div><h3 class="font-bold text-sm" style="color:#273e2a">مشوي طازج</h3><p class="text-xs mt-1" style="color:#6e9671">يومياً على الفحم</p></div>
+      <div class="text-center p-5 bg-white rounded-2xl shadow-sm border" style="border-color:#e2ebe2"><div class="text-4xl mb-3">&#x1F33F;</div><h3 class="font-bold text-sm" style="color:#273e2a">مكونات طبيعية</h3><p class="text-xs mt-1" style="color:#6e9671">بدون إضافات ضارة</p></div>
+      <div class="text-center p-5 bg-white rounded-2xl shadow-sm border" style="border-color:#e2ebe2"><div class="text-4xl mb-3">&#x1F680;</div><h3 class="font-bold text-sm" style="color:#273e2a">توصيل سريع</h3><p class="text-xs mt-1" style="color:#6e9671">في أقل وقت ممكن</p></div>
+      <div class="text-center p-5 bg-white rounded-2xl shadow-sm border" style="border-color:#e2ebe2"><div class="text-4xl mb-3">&#x1F48E;</div><h3 class="font-bold text-sm" style="color:#273e2a">جودة مضمونة</h3><p class="text-xs mt-1" style="color:#6e9671">رضاك أولويتنا</p></div>
+    </div>
+    <div class="grid grid-cols-3 gap-3 mt-6">
+      <div class="stat-card text-center"><div class="font-black text-3xl" style="color:#edc755">+5K</div><div class="text-xs mt-1 font-medium" style="color:#9bb99d">عميل راضٍ</div></div>
+      <div class="stat-card text-center"><div class="font-black text-3xl" style="color:#edc755">+100</div><div class="text-xs mt-1 font-medium" style="color:#9bb99d">صنف متنوع</div></div>
+      <div class="stat-card text-center"><div class="font-black text-3xl" style="color:#edc755">+10</div><div class="text-xs mt-1 font-medium" style="color:#9bb99d">سنوات خبرة</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section id="contact" class="py-10" style="background:#f4f7f4">
+  <div class="max-w-5xl mx-auto px-4">
+    <h2 class="text-2xl font-black section-title mb-8" style="color:#273e2a">&#x1F4CD; تواصل معنا</h2>
+    <div class="bg-white rounded-2xl p-5 shadow-sm border mb-5" style="border-color:#e2ebe2">
+      <div class="flex items-start gap-3">
+        <div class="w-10 h-10 rounded-full flex items-center justify-center text-xl flex-shrink-0" style="background:#e2ebe2">&#x1F4CD;</div>
+        <div>
+          <h3 class="font-bold mb-1" style="color:#273e2a">العنوان</h3>
+          <p class="text-sm leading-relaxed" style="color:#4d7850">23 ش ضياء - متفرع من شارع فيصل الرئيسي، بجوار مسجد ضياء، الجيزة</p>
+          <p class="text-xs mt-1" style="color:#9bb99d">2 El Alfy Street, Sheiakha Ola, Al Jizah</p>
+        </div>
+      </div>
+    </div>
+    <div class="bg-white rounded-2xl p-5 shadow-sm border mb-5" style="border-color:#e2ebe2">
+      <h3 class="font-bold mb-4 flex items-center gap-2" style="color:#273e2a">&#x1F4DE; أرقام الطلبات</h3>
+      <div class="flex flex-wrap gap-2">
+        <a href="https://wa.me/201210226682" target="_blank" rel="noopener" class="phone-chip" style="background:#e8f8ef;color:#1a7340;border-color:#a3d9b5">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.083.534 4.044 1.472 5.759L.053 23.25a.75.75 0 0 0 .916.972l5.68-1.486A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.967 0-3.807-.538-5.384-1.47l-.383-.229-3.973 1.04 1.058-3.861-.248-.396A9.945 9.945 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+          واتساب: 01210226682
+        </a>
+        <a href="tel:01210226692" class="phone-chip">&#x1F4DE; 01210226692</a>
+        <a href="tel:01065965478" class="phone-chip">&#x1F4DE; 01065965478</a>
+        <a href="tel:01067528050" class="phone-chip">&#x1F4DE; 01067528050</a>
+        <a href="tel:01069224640" class="phone-chip">&#x1F4DE; 01069224640</a>
+      </div>
+    </div>
+    <div class="bg-white rounded-2xl p-3 shadow-sm border overflow-hidden" style="border-color:#e2ebe2">
+      <h3 class="font-bold mb-3 px-2 flex items-center gap-2" style="color:#273e2a">&#x1F5FA;&#xFE0F; الموقع على الخريطة</h3>
+      <div class="rounded-xl overflow-hidden" style="height:280px">
+        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3456.2!2d31.2012!3d29.9968!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x145847f7c8fc5dc9%3A0x1aca7a3dd4e3a46c!2sAl%20Alfy%20St%2C%20Sheiakha%20Ola%2C%20Al%20Jizah!5e0!3m2!1sar!2seg!4v1700000000000!5m2!1sar!2seg" width="100%" height="100%" style="border:0" allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="موقع مطعم البرنس السوري"></iframe>
+      </div>
+      <a href="https://www.google.com/maps/place/%D9%85%D8%B7%D8%B9%D9%85+%D8%A7%D9%84%D8%A8%D8%B1%D9%86%D8%B3+%D8%A7%D9%84%D8%B3%D9%88%D8%B1%D9%8A%E2%80%AD/@29.9997576,31.1822949,15.17z/data=!4m6!3m5!1s0x145845d7c7ed8a5f:0x743ee20ef9251981!8m2!3d30.0004275!4d31.1696478!16s%2Fg%2F11dxjvwqsb?entry=ttu&g_ep=EgoyMDI2MDkwMi4wIKXMDSoASAFQAw%3D%3D" target="_blank" rel="noopener" class="mt-3 flex items-center justify-center gap-2 font-bold text-sm py-3 rounded-xl text-white" style="background:#3b5f3e;text-decoration:none">&#x1F9ED; افتح في خرائط جوجل</a>
+    </div>
+  </div>
+</section>
+
+<footer style="background:#1e3021;color:#9bb99d" class="py-8 text-center">
+  <div class="max-w-5xl mx-auto px-4">
+    <div class="w-14 h-14 rounded-full flex items-center justify-center text-2xl mx-auto mb-4" style="background:linear-gradient(135deg,#e6b12a,#c98f15)">&#x1F451;</div>
+    <p class="font-black text-white text-xl mb-1">مطعم البرنس السوري</p>
+    <p class="text-sm mb-4" style="color:#edc755">Al-Brens El-Soury Restaurant</p>
+    <p class="text-xs mb-4" style="color:#6e9671">جميع الحقوق محفوظة &copy; 2026 &bull; مطعم البرنس السوري &mdash; الجيزة</p>
+    <a href="/admin" class="text-xs" style="color:#304d33;text-decoration:none">&#x1F511; لوحة التحكم</a>
+    <p class="text-xs mt-3 mb-0" style="color:#426447;letter-spacing:.02em">Developed by Ashill</p>
+  </div>
+</footer>
+</main>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <button class="bottom-nav-item active" id="nav-home" onclick="navTo('home',this)"><span class="nav-icon">&#x1F3E0;</span><span class="nav-label">الرئيسية</span></button>
+  <button class="bottom-nav-item" id="nav-menu" onclick="navTo('menu',this)"><span class="nav-icon">&#x1F37D;&#xFE0F;</span><span class="nav-label">المنيو</span></button>
+  <button class="bottom-nav-item" id="nav-offers" onclick="navTo('offers',this)"><span class="nav-icon">&#x1F389;</span><span class="nav-label">العروض</span></button>
+  <button class="bottom-nav-item" id="nav-contact" onclick="navTo('contact',this)"><span class="nav-icon">&#x1F4CD;</span><span class="nav-label">تواصل</span></button>
+</nav>
+
+<!-- FAB WA -->
+<a href="https://wa.me/201210226682" target="_blank" rel="noopener" class="fab-wa" title="اطلب عبر واتساب">
+  <svg class="w-7 h-7" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.083.534 4.044 1.472 5.759L.053 23.25a.75.75 0 0 0 .916.972l5.68-1.486A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.967 0-3.807-.538-5.384-1.47l-.383-.229-3.973 1.04 1.058-3.861-.248-.396A9.945 9.945 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+</a>
+
+<!-- MODAL -->
+<div id="item-modal" class="modal-overlay" style="display:none" onclick="closeModalOnBg(event)">
+  <div class="modal-box" id="modal-box"></div>
+</div>
+
+<script>
+// ============================================================
+// FIREBASE CONFIG
+// ============================================================
+const firebaseConfig = {
+  apiKey: "AIzaSyBb1uedEIg2Xx6TjmjnOkk2gV-SM9KiBzI",
+  authDomain: "coffee-spark-ai-barista-d4aa6.firebaseapp.com",
+  projectId: "coffee-spark-ai-barista-d4aa6",
+  storageBucket: "coffee-spark-ai-barista-d4aa6.firebasestorage.app",
+  messagingSenderId: "230366963883",
+  appId: "1:230366963883:web:bceac5c0266c47ecc76fee"
+};
+
+let db = null;
+try {
+  firebase.initializeApp(firebaseConfig);
+  db = firebase.firestore();
+} catch(e) {
+  console.warn('[Firebase] Init failed, using fallback data:', e.message);
+}
+
+// ============================================================
+// DEFAULT DATA (Fallback if Firestore unreachable)
+// ============================================================
+const DEFAULT_CATEGORIES = [
+  {id:'grilled', label:'🔥 مشويات', order:0},
+  {id:'broasted', label:'🍗 بروستد', order:1},
+  {id:'shawarma', label:'🌯 شاورما', order:2},
+  {id:'western', label:'🍔 غربية', order:3},
+  {id:'prince', label:'👑 البرنس', order:4},
+  {id:'fatteh', label:'🥙 فتة', order:5},
+  {id:'sandwiches', label:'🥪 سندوتشات', order:6},
+  {id:'appetizers', label:'🍟 مقبلات', order:7},
+];
+
+const DEFAULT_ITEMS = [
+  {id:'g1',name:'فرخة مشوية كاملة',emoji:'🍗',price:400,description:'فرخة مشوية كاملة على الفحم',includes:'أرز بسمتي • رغيفا عيش • تومية • مخلل',category:'grilled',tag:'🔥 الأكثر طلباً',available:true,order:0},
+  {id:'g2',name:'فرخة مشوية سادة',emoji:'🍗',price:360,description:'فرخة مشوية بدون ملحقات',includes:'الفرخة فقط',category:'grilled',available:true,order:1},
+  {id:'g3',name:'نصف فرخة مشوية',emoji:'🍗',price:210,description:'نصف فرخة مشوية على الفحم',includes:'أرز بسمتي • بطاطس • رغيف عيش • تومية • مخلل',category:'grilled',available:true,order:2},
+  {id:'g4',name:'دبل ورك مشوي',emoji:'🦵',price:180,description:'ورك مضاعف مشوي',includes:'قطعتا ورك مشوية على الفحم',category:'grilled',available:true,order:3},
+  {id:'g5',name:'ربع صدر مشوي',emoji:'🍗',price:130,description:'ربع صدر مشوي',includes:'أرز بسمتي • بطاطس • رغيف عيش • تومية • مخلل',category:'grilled',available:true,order:4},
+  {id:'g6',name:'ربع ورك مشوي',emoji:'🦵',price:120,description:'ربع ورك مشوي',includes:'أرز بسمتي • بطاطس • رغيف عيش • تومية • مخلل',category:'grilled',available:true,order:5},
+  {id:'b1',name:'بروستد عائلية',emoji:'🍗',price:425,description:'10 قطع بروستد مقرمش',includes:'أرز بسمتي • بطاطس • 4 أرغفة • تومية • كاتشب • مخلل • سبايسي',category:'broasted',tag:'👨‍👩‍👧‍👦 عائلي',available:true,order:0},
+  {id:'b2',name:'فرخة بروستد كاملة',emoji:'🍗',price:400,description:'5 قطع بروستد',includes:'أرز بسمتي • بطاطس • 3 أرغفة • تومية • كاتشب • مخلل • سبايسي',category:'broasted',available:true,order:1},
+  {id:'b3',name:'نصف فرخة بروستد',emoji:'🍗',price:220,description:'3 قطع بروستد',includes:'أرز بسمتي • بطاطس • رغيفا عيش • تومية • كاتشب • مخلل • سبايسي',category:'broasted',available:true,order:2},
+  {id:'b4',name:'قطع دبوس 5 قطع',emoji:'🍗',price:210,description:'5 قطع دبوس',includes:'أرز بسمتي • بطاطس • رغيفا عيش • تومية • كاتشب • مخلل • سبايسي',category:'broasted',available:true,order:3},
+  {id:'b5',name:'حوايج بروستد',emoji:'🕊️',price:130,description:'5 حمام بروستد',includes:'أرز بسمتي • بطاطس • رغيف عيش • مخلل',category:'broasted',available:true,order:4},
+  {id:'b6',name:'ربع فرخة بروستد',emoji:'🍗',price:140,description:'قطعتان بروستد',includes:'أرز بسمتي • بطاطس • رغيف عيش • مخلل',category:'broasted',available:true,order:5},
+  {id:'b7',name:'3 فراخ بروستد صغيرة',emoji:'🐣',price:150,description:'3 فراخ صغيرة',includes:'فراخ صغيرة مقرمشة',category:'broasted',available:true,order:6},
+  {id:'b8',name:'5 فراخ بروستد صغيرة',emoji:'🐣',price:215,description:'5 فراخ صغيرة',includes:'فراخ صغيرة مقرمشة',category:'broasted',available:true,order:7},
+  {id:'sh1',name:'ربع كيلو شاورما فراخ',emoji:'🌯',price:160,description:'ربع كيلو شاورما دجاج',includes:'بطاطس • رغيف عيش • تومية • مخلل',category:'shawarma',available:true,order:0},
+  {id:'sh2',name:'ربع كيلو شاورما لحمة',emoji:'🥩',price:175,description:'ربع كيلو شاورما لحمة',includes:'بطاطس • رغيف عيش • طحينة • مخلل',category:'shawarma',available:true,order:1},
+  {id:'sh3',name:'ربع كيلو شاورما مكس',emoji:'🌯',price:175,description:'ربع كيلو لحمة وفراخ',includes:'بطاطس • رغيف عيش • تومية • مخلل',category:'shawarma',available:true,order:2},
+  {id:'sh4',name:'نصف كيلو شاورما فراخ',emoji:'🌯',price:285,description:'نصف كيلو شاورما دجاج',includes:'بطاطس • عيش • تومية • مخلل',category:'shawarma',available:true,order:3},
+  {id:'sh5',name:'نصف كيلو شاورما لحمة',emoji:'🥩',price:335,description:'نصف كيلو شاورما لحمة',includes:'بطاطس • عيش • طحينة • مخلل',category:'shawarma',available:true,order:4},
+  {id:'sh6',name:'نصف كيلو شاورما مكس',emoji:'🌯',price:335,description:'نصف كيلو لحمة وفراخ',includes:'بطاطس • عيش • تومية • مخلل',category:'shawarma',available:true,order:5},
+  {id:'sh7',name:'نصف كيلو شيش طاووق',emoji:'🍢',price:285,description:'نصف كيلو شيش طاووق',includes:'بطاطس • عيش • تومية • مخلل',category:'shawarma',available:true,order:6},
+  {id:'sh8',name:'نصف كيلو كرسبي',emoji:'🍗',price:285,description:'نصف كيلو كرسبي',includes:'بطاطس • عيش • تومية • مخلل',category:'shawarma',available:true,order:7},
+  {id:'sh9',name:'نصف كيلو زنجر',emoji:'🍗',price:285,description:'نصف كيلو زنجر',includes:'بطاطس • عيش • تومية • مخلل',category:'shawarma',available:true,order:8},
+  {id:'sh10',name:'كيلو شاورما فراخ',emoji:'🌯',price:550,description:'كيلو شاورما دجاج',includes:'بطاطس • عيش • تومية • مخلل',category:'shawarma',tag:'👑 قيمة',available:true,order:9},
+  {id:'sh11',name:'كيلو شاورما لحمة',emoji:'🥩',price:650,description:'كيلو شاورما لحمة',includes:'بطاطس • عيش • طحينة • مخلل',category:'shawarma',tag:'👑 قيمة',available:true,order:10},
+  {id:'sh12',name:'كيلو شاورما مكس',emoji:'🌯',price:650,description:'كيلو لحمة وفراخ',includes:'بطاطس • عيش • تومية • مخلل',category:'shawarma',tag:'👑 قيمة',available:true,order:11},
+  {id:'sh13',name:'كيلو شيش طاووق',emoji:'🍢',price:550,description:'كيلو شيش طاووق',includes:'بطاطس • عيش • تومية • مخلل',category:'shawarma',available:true,order:12},
+  {id:'sh14',name:'كيلو كرسبي',emoji:'🍗',price:550,description:'كيلو كرسبي',includes:'بطاطس • عيش • تومية • مخلل',category:'shawarma',available:true,order:13},
+  {id:'sh15',name:'كيلو زنجر',emoji:'🍗',price:550,description:'كيلو زنجر',includes:'بطاطس • عيش • تومية • مخلل',category:'shawarma',available:true,order:14},
+  {id:'w1',name:'وجبة شيش طاووق',emoji:'🍢',price:165,description:'سيخ شيش طاووق كامل',includes:'أرز بسمتي • بطاطس • رغيف عيش • تومية • مخلل',category:'western',available:true,order:0},
+  {id:'w2',name:'وجبة كرسبي',emoji:'🍗',price:165,description:'فراخ كرسبي مقرمشة',includes:'أرز بسمتي • بطاطس • رغيف عيش • تومية • مخلل',category:'western',available:true,order:1},
+  {id:'w3',name:'وجبة زنجر',emoji:'🍗',price:165,description:'زنجر بتبيلة خاصة',includes:'أرز بسمتي • بطاطس • رغيف عيش • تومية • مخلل',category:'western',available:true,order:2},
+  {id:'w4',name:'وجبة إسكالوب دجاج',emoji:'🍖',price:170,description:'إسكالوب دجاج مميز',includes:'أرز بسمتي • بطاطس • رغيف عيش • تومية • مخلل',category:'western',available:true,order:3},
+  {id:'w5',name:'وجبة فاهيتا / مكسيكي',emoji:'🌮',price:175,description:'فاهيتا دجاج بتوابل مكسيكية',includes:'أرز بسمتي • بطاطس • رغيف عيش • تومية • مخلل',category:'western',available:true,order:4},
+  {id:'p1',name:'وجبة المشكل البرنس السوري',emoji:'👑',price:240,description:'الطبق الملكي الأشمل — تجربة لا تُنسى!',includes:'أرز بسمتي • بطاطس • سيخ شيش طاووق • شاورما لحمة • شاورما فراخ • سلطة كول سلو • رغيف عيش • مخلل',category:'prince',tag:'👑 التوصية رقم 1',available:true,order:0},
+  {id:'f1',name:'فتة شاورما فراخ وجبة',emoji:'🥙',price:130,description:'فتة شاورما فراخ كاملة',includes:'أرز بسمتي • بطاطس • تومية • مخلل',category:'fatteh',tag:'💚 وجبة',available:true,order:0},
+  {id:'f2',name:'فتة شاورما فراخ عادي',emoji:'🥙',price:85,description:'فتة شاورما فراخ',includes:'الفتة فقط',category:'fatteh',available:true,order:1},
+  {id:'f3',name:'فتة شاورما لحمة وجبة',emoji:'🥩',price:165,description:'فتة شاورما لحمة كاملة',includes:'أرز بسمتي • بطاطس • تومية • مخلل',category:'fatteh',tag:'💚 وجبة',available:true,order:2},
+  {id:'f4',name:'فتة شاورما لحمة عادي',emoji:'🥩',price:95,description:'فتة شاورما لحمة',includes:'الفتة فقط',category:'fatteh',available:true,order:3},
+  {id:'f5',name:'فتة شاورما مكس',emoji:'🌯',price:145,description:'فتة لحمة وفراخ',includes:'أرز بسمتي • بطاطس • تومية • مخلل',category:'fatteh',available:true,order:4},
+  {id:'s1',name:'شاورما فراخ',emoji:'🌯',price:125,description:'شاورما دجاج',includes:'تومية • مخلل • بهارات',category:'sandwiches',sizes:[{label:'سوري',price:125},{label:'صاج',price:105},{label:'فينو كبير',price:90},{label:'فينو صغير',price:80}],available:true,order:0},
+  {id:'s2',name:'شاورما لحمة',emoji:'🥩',price:140,description:'شاورما لحمة',includes:'طحينة • مخلل • بهارات',category:'sandwiches',sizes:[{label:'سوري',price:140},{label:'صاج',price:115},{label:'فينو كبير',price:110},{label:'فينو صغير',price:85}],available:true,order:1},
+  {id:'s3',name:'شاورما مكس',emoji:'🌯',price:140,description:'شاورما لحمة وفراخ',includes:'تومية • مخلل • بهارات',category:'sandwiches',sizes:[{label:'سوري',price:140},{label:'صاج',price:115},{label:'فينو كبير',price:110},{label:'فينو صغير',price:85}],available:true,order:2},
+  {id:'s4',name:'شيش طاووق / كرسبي / زنجر',emoji:'🍗',price:100,description:'مع بطاطس',includes:'بطاطس • تومية • مخلل',category:'sandwiches',sizes:[{label:'سوري',price:100},{label:'صاج',price:95}],available:true,order:3},
+  {id:'s5',name:'فلافل',emoji:'🧆',price:40,description:'فلافل طازجة',includes:'طازجة يومياً',category:'sandwiches',sizes:[{label:'سوري',price:40},{label:'صاج',price:27},{label:'فينو',price:25}],available:true,order:4},
+  {id:'s6',name:'كبدة فراخ وبطاطس',emoji:'🍗',price:55,description:'كبدة فراخ مع بطاطس',includes:'بطاطس • بهارات',category:'sandwiches',sizes:[{label:'سوري',price:55},{label:'صاج',price:45},{label:'فينو',price:40}],available:true,order:5},
+  {id:'s7',name:'برجر',emoji:'🍔',price:70,description:'برجر متنوع',includes:'خس • طماطم • صوص',category:'sandwiches',sizes:[{label:'عادي',price:70},{label:'مميز',price:85},{label:'ديلوكس',price:95}],available:true,order:6},
+  {id:'a1',name:'طبق بطاطس',emoji:'🍟',price:40,description:'بطاطس مقلية مقرمشة',includes:'بطاطس طازجة',category:'appetizers',available:true,order:0},
+  {id:'a2',name:'علبة تومية',emoji:'🧄',price:25,description:'تومية بيضاء طازجة',includes:'صوص تومية',category:'appetizers',available:true,order:1},
+  {id:'a3',name:'علبة سبايسي',emoji:'🌶️',price:25,description:'صوص سبايسي حار',includes:'صوص حار مميز',category:'appetizers',available:true,order:2},
+  {id:'a4',name:'كول سلو',emoji:'🥗',price:30,description:'سلطة كول سلو طازجة',includes:'كرنب • جزر • صوص',category:'appetizers',available:true,order:3},
+  {id:'ws1',name:'شيش طاووق بالبطاطس',emoji:'🍢',price:100,description:'سندوتش شيش طاووق مع البطاطس',includes:'بطاطس • تومية • مخلل',category:'sandwiches',sizes:[{label:'سوري',price:100},{label:'صاج',price:95}],available:true,order:10},
+  {id:'ws2',name:'كرسبي بالبطاطس',emoji:'🍗',price:100,description:'سندوتش كرسبي مع البطاطس',includes:'بطاطس • تومية • مخلل',category:'sandwiches',sizes:[{label:'سوري',price:100},{label:'صاج',price:95}],available:true,order:11},
+  {id:'ws3',name:'زنجر بالبطاطس',emoji:'🍗',price:100,description:'سندوتش زنجر مع البطاطس',includes:'بطاطس • تومية • مخلل',category:'sandwiches',sizes:[{label:'سوري',price:100},{label:'صاج',price:95}],available:true,order:12},
+  {id:'ws4',name:'إسكالوب بالبطاطس',emoji:'🍖',price:105,description:'سندوتش إسكالوب مع البطاطس',includes:'بطاطس • تومية • مخلل',category:'sandwiches',sizes:[{label:'سوري',price:105},{label:'صاج',price:100}],available:true,order:13},
+  {id:'ws5',name:'فاهيتا بالبطاطس',emoji:'🌮',price:110,description:'سندوتش فاهيتا مع البطاطس',includes:'بطاطس • صوص • مخلل',category:'sandwiches',available:true,order:14},
+  {id:'ws6',name:'مكسيكي بالبطاطس',emoji:'🌮',price:110,description:'سندوتش مكسيكي مع البطاطس',includes:'بطاطس • صوص • مخلل',category:'sandwiches',available:true,order:15},
+  {id:'so1',name:'إضافة بطاطس',emoji:'🍟',price:10,description:'إضافة بطاطس للسندوتش',includes:'بطاطس إضافية',category:'sandwiches',available:true,order:16},
+  {id:'so2',name:'إضافة جبنة موتزاريلا',emoji:'🧀',price:15,description:'إضافة جبنة موتزاريلا',includes:'جبنة موتزاريلا',category:'sandwiches',available:true,order:17},
+  {id:'so3',name:'إضافة لحوم',emoji:'🥩',price:50,description:'إضافة لحوم للسندوتش',includes:'لحوم إضافية',category:'sandwiches',available:true,order:18},
+  {id:'s8',name:'بطاطس',emoji:'🍟',price:50,description:'سندوتش بطاطس',includes:'بطاطس • صوص',category:'sandwiches',sizes:[{label:'سوري',price:50},{label:'صاج',price:30},{label:'فينو',price:27}],available:true,order:19},
+  {id:'s9',name:'مكس بطاطس وفلافل',emoji:'🥙',price:45,description:'سندوتش بطاطس وفلافل',includes:'بطاطس • فلافل • صوص',category:'sandwiches',sizes:[{label:'سوري',price:45},{label:'صاج',price:30},{label:'فينو',price:27}],available:true,order:20},
+  {id:'s10',name:'بطاطس وشيدر وموتزاريلا',emoji:'🧀',price:50,description:'بطاطس مع الشيدر والموتزاريلا',includes:'بطاطس • شيدر • موتزاريلا',category:'sandwiches',sizes:[{label:'سوري',price:50},{label:'صاج',price:45},{label:'فينو',price:35}],available:true,order:21},
+  {id:'s11',name:'بانيه وبطاطس',emoji:'🍗',price:50,description:'سندوتش بانيه مع البطاطس',includes:'بانيه • بطاطس • صوص',category:'sandwiches',sizes:[{label:'سوري',price:50},{label:'صاج',price:45},{label:'فينو',price:35}],available:true,order:22},
+  {id:'s12',name:'سويس وبطاطس',emoji:'🍗',price:45,description:'سندوتش سويس مع البطاطس',includes:'سويس • بطاطس • صوص',category:'sandwiches',sizes:[{label:'سوري',price:45},{label:'صاج',price:40},{label:'فينو',price:35}],available:true,order:23},
+  {id:'s13',name:'كبيبة وبطاطس',emoji:'🥙',price:45,description:'سندوتش كبيبة مع البطاطس',includes:'كبيبة • بطاطس • صوص',category:'sandwiches',sizes:[{label:'سوري',price:45},{label:'صاج',price:40},{label:'فينو',price:35}],available:true,order:24},
+  {id:'s14',name:'برجر وبطاطس',emoji:'🍔',price:70,description:'برجر مع البطاطس',includes:'برجر • بطاطس • خس • طماطم • صوص',category:'sandwiches',available:true,order:25},
+  {id:'s15',name:'برجر وأومليت وبطاطس',emoji:'🍔',price:80,description:'برجر وأومليت مع البطاطس',includes:'برجر • أومليت • بطاطس • صوص',category:'sandwiches',available:true,order:26},
+  {id:'s16',name:'برجر وجبنة وبطاطس',emoji:'🍔',price:85,description:'برجر وجبنة مع البطاطس',includes:'برجر • جبنة • بطاطس • صوص',category:'sandwiches',available:true,order:27},
+  {id:'s17',name:'برجر وأومليت وجبنة وبطاطس',emoji:'🍔',price:95,description:'برجر وأومليت وجبنة مع البطاطس',includes:'برجر • أومليت • جبنة • بطاطس • صوص',category:'sandwiches',available:true,order:28},
+  {id:'ap2',name:'طبق أرز بسمتي',emoji:'🍚',price:40,description:'طبق أرز بسمتي',includes:'كبير 40 ج • صغير 30 ج',category:'appetizers',sizes:[{label:'كبير',price:40},{label:'صغير',price:30}],available:true,order:5},
+  {id:'ap3',name:'علبة مسبحة',emoji:'🥣',price:40,description:'مسبحة طازجة',includes:'كبير 40 ج • صغير 30 ج',category:'appetizers',sizes:[{label:'كبير',price:40},{label:'صغير',price:30}],available:true,order:6},
+  {id:'ap4',name:'علبة تومية صغيرة',emoji:'🧄',price:15,description:'تومية بيضاء طازجة',includes:'كبير 25 ج • صغير 15 ج',category:'appetizers',sizes:[{label:'كبير',price:25},{label:'صغير',price:15}],available:true,order:7},
+  {id:'ap5',name:'علبة سبايسي صغيرة',emoji:'🌶️',price:15,description:'صوص سبايسي حار',includes:'كبير 25 ج • صغير 15 ج',category:'appetizers',sizes:[{label:'كبير',price:25},{label:'صغير',price:15}],available:true,order:8},
+  {id:'ap6',name:'علبة كول سلو صغيرة',emoji:'🥗',price:20,description:'سلطة كول سلو طازجة',includes:'كبير 30 ج • صغير 20 ج',category:'appetizers',sizes:[{label:'كبير',price:30},{label:'صغير',price:20}],available:true,order:9},
+  {id:'ap7',name:'طبق مخلل مشكل',emoji:'🥒',price:10,description:'طبق مخلل مشكل',includes:'مخلل مشكل',category:'appetizers',available:true,order:10},
+  {id:'ap8',name:'قطعة كبيبة / بانيه / سويس',emoji:'🥙',price:15,description:'قطعة حسب الاختيار',includes:'السعر من 15 إلى 20 ج حسب النوع',category:'appetizers',sizes:[{label:'كبيبة',price:15},{label:'بانيه',price:20},{label:'سويس',price:20}],available:true,order:11},
+  {id:'ap9',name:'محمرة',emoji:'🥙',price:20,description:'محمرة طازجة',includes:'سادة 20 ج • بالجبنة 30 ج',category:'appetizers',sizes:[{label:'سادة',price:20},{label:'بالجبنة',price:30}],available:true,order:12},
+  {id:'ap10',name:'ربطة عيش شامي',emoji:'🥖',price:18,description:'7 أرغفة عيش شامي',includes:'ربطة تحتوي على 7 أرغفة',category:'appetizers',available:true,order:13},
+  {id:'ap11',name:'رغيف عيش سوري',emoji:'🥖',price:4,description:'رغيف عيش سوري',includes:'رغيف واحد',category:'appetizers',available:true,order:14},
+  {id:'ap12',name:'3 قرص فلافل',emoji:'🧆',price:5,description:'ثلاثة أقراص فلافل',includes:'3 قرص فلافل',category:'appetizers',available:true,order:15},
+];
+
+const DEFAULT_OFFERS = [
+  {id:'o1',badge:'🔥 الأكثر مبيعاً',name:'عرض الفتيت الخاص',description:'فتة شاورما فراخ + فتة شاورما لحمة',includes:'فتة شاورما فراخ + فتة شاورما لحمة مع أرز بسمتي وبطاطس',price:255,active:true},
+  {id:'o2',badge:'👨‍👩‍👧‍👦 عائلي',name:'وجبة التوفير العائلية',description:'بروستد عائلية 10 قطع مع كل الملحقات',includes:'10 قطع بروستد + أرز بسمتي + بطاطس + 4 أرغفة + تومية + كاتشب + مخلل + سبايسي',price:425,active:true},
+  {id:'o3',badge:'💰 اقتصادي',name:'عرض ميني كايزر',description:'وجبة ميني كايزر بسعر خاص',includes:'وجبة ميني كايزر مع إضافات',price:130,active:true},
+  {id:'o4',badge:'👑 الأفضل قيمة',name:'كيلو الشاورما المشكل',description:'كيلو لحمة وفراخ مع كل الملحقات',includes:'كيلو شاورما مكس + أرز بسمتي + بطاطس + عيش + تومية + مخلل',price:650,active:true},
+  {id:'o5',badge:'🔥 مشوي',name:'فرخة مشوية كاملة',description:'مشوي على الفحم مع أرز بسمتي',includes:'فرخة كاملة + أرز بسمتي + رغيفا عيش + تومية + مخلل',price:400,active:true},
+  {id:'o6',badge:'👑 مميز',name:'وجبة المشكل البرنس',description:'طبق مشكل فاخر يكفي الاثنين',includes:'شيش طاووق + شاورما لحمة + شاورما فراخ + أرز + بطاطس + كول سلو + مخلل',price:240,active:true},
+  {id:'o7',badge:'🔥 عرض',name:'فتيت فراخ صغير',description:'فتيت فراخ صغير',includes:'فتيت فراخ',price:180,active:true},
+  {id:'o8',badge:'💰 اقتصادي',name:'4 ميني كايزر فراخ',description:'أربع سندوتشات ميني كايزر فراخ',includes:'4 ميني كايزر فراخ',price:145,active:true},
+  {id:'o9',badge:'👑 مميز',name:'قصر فتيت فراخ كبيرة',description:'فتيت فراخ كبيرة',includes:'فتة فراخ كبيرة',price:255,active:true},
+  {id:'o10',badge:'🌮 مكسيكي',name:'فتيت فراخ مكسيكي',description:'فتيت فراخ بتتبيلة مكسيكية',includes:'فتيت فراخ مكسيكي',price:190,active:true},
+  {id:'o11',badge:'🥩 عرض',name:'فتة لحمة + شاورما لحمة + عصير',description:'وجبة فتة وشاورما لحمة مع عصير',includes:'فتة لحمة + شاورما لحمة + عصير',price:130,active:true},
+  {id:'o12',badge:'🍗 عرض',name:'فتة فراخ + شاورما فراخ + عصير',description:'وجبة فتة وشاورما فراخ مع عصير',includes:'فتة فراخ + شاورما فراخ + عصير',price:165,active:true},
+  {id:'o13',badge:'🔥 عرض',name:'ربع ورك + ربع فرخة + قطع شاورما + عصير',description:'وجبة مشبعة مع عصير',includes:'ربع ورك + ربع فرخة + قطع شاورما + عصير',price:180,active:true},
+  {id:'o14',badge:'🔥 عرض',name:'ربع ورك + ربع فرخة + فتة شاورما + عصير',description:'وجبة مشبعة مع فتة وعصير',includes:'ربع ورك + ربع فرخة + فتة شاورما + عصير',price:190,active:true},
+];
+
+const DEFAULT_HOURS = {
+  0:{name:'الأحد',open:'8:00 AM',close:'3:00 AM',closed:false},
+  1:{name:'الاثنين',open:'8:00 AM',close:'3:00 AM',closed:false},
+  2:{name:'الثلاثاء',open:'8:00 AM',close:'3:00 AM',closed:false},
+  3:{name:'الأربعاء',open:'8:00 AM',close:'3:00 AM',closed:false},
+  4:{name:'الخميس',open:'8:00 AM',close:'3:00 AM',closed:false},
+  5:{name:'الجمعة',open:'8:00 AM',close:'3:00 AM',closed:false},
+  6:{name:'السبت',open:'8:00 AM',close:'3:00 AM',closed:false},
+};
+
+function resolveWorkingHours(hours) {
+  if (!hours || Object.keys(hours).length === 0) return DEFAULT_HOURS;
+
+  const entries = Object.values(hours);
+  const isLegacySchedule = entries.length === 7 && entries.every(hour =>
+    !hour.closed && hour.open === '7:00 AM' && hour.close === '2:00 AM'
+  );
+
+  return isLegacySchedule ? DEFAULT_HOURS : hours;
+}
+
+async function ensureLegacySeed(dbRef, options = {}) {
+  if (!dbRef) return false;
+
+  try {
+    const authApi = window.firebase && firebase.auth ? firebase.auth() : null;
+    if (!authApi || !authApi.currentUser) return false;
+
+    const menuCollection = options.menuCollection || 'menu';
+    const offersCollection = options.offersCollection || 'offers';
+    const settingsDoc = options.settingsDoc || 'settings/main';
+
+    const [menuSnap, offersSnap, settingsSnap] = await Promise.all([
+      dbRef.collection(menuCollection).get(),
+      dbRef.collection(offersCollection).get(),
+      dbRef.doc(settingsDoc).get(),
+    ]);
+
+    const writes = [];
+    const existingMenuIds = new Set(menuSnap.docs.map(doc => doc.id));
+    const existingOfferIds = new Set(offersSnap.docs.map(doc => doc.id));
+
+    DEFAULT_ITEMS.forEach(item => {
+      if (!existingMenuIds.has(item.id)) {
+        const { id, ...payload } = item;
+        writes.push(dbRef.collection(menuCollection).doc(id).set(payload));
+      }
+    });
+
+    DEFAULT_OFFERS.forEach(offer => {
+      if (!existingOfferIds.has(offer.id)) {
+        const { id, ...payload } = offer;
+        writes.push(dbRef.collection(offersCollection).doc(id).set(payload));
+      }
+    });
+
+    if (!settingsSnap.exists || !settingsSnap.data().workingHours) {
+      writes.push(dbRef.doc(settingsDoc).set({ categories: DEFAULT_CATEGORIES, workingHours: DEFAULT_HOURS }, { merge: true }));
+    }
+
+    if (writes.length) {
+      await Promise.all(writes);
+    }
+
+    return true;
+  } catch (error) {
+    console.warn('[Seed] Public page seed skipped:', error.message);
+    return false;
+  }
+}
+
+// ============================================================
+// APP STATE
+// ============================================================
+let state = {
+  categories: [],
+  items: [],
+  offers: [],
+  hours: {},
+  activeTabIndex: 0,
+  currentItem: null,
+  currentSize: null,
+};
+
+// ============================================================
+// FIRESTORE LOADERS
+// ============================================================
+async function loadAll() {
+  try {
+    if (!db) throw new Error('No DB');
+
+    await ensureLegacySeed(db);
+
+    const [menuSnap, offersSnap, settingsSnap] = await Promise.all([
+      db.collection('menu').orderBy('order').get(),
+      db.collection('offers').where('active','==',true).get(),
+      db.doc('settings/main').get(),
+    ]);
+
+    if (!menuSnap.empty) {
+      state.items = menuSnap.docs.map(d => ({id: d.id, ...d.data()}));
+      const catSet = {};
+      state.items.forEach(it => {
+        if (!catSet[it.category]) catSet[it.category] = {id: it.category, label: it.category, order: it.order || 0};
+      });
+      const s = settingsSnap.exists ? settingsSnap.data() : {};
+      if (s.categories) {
+        state.categories = s.categories.sort((a,b) => a.order - b.order);
+      } else {
+        state.categories = DEFAULT_CATEGORIES.filter(c => catSet[c.id]);
+      }
+      state.hours = resolveWorkingHours(s.workingHours);
+    } else {
+      state.items = [];
+      state.categories = [];
+      state.hours = DEFAULT_HOURS;
+    }
+
+    if (!offersSnap.empty) {
+      state.offers = offersSnap.docs.map(d => ({id: d.id, ...d.data()}));
+    } else {
+      state.offers = [];
+    }
+  } catch (e) {
+    console.warn('[Firebase] Unable to load Firestore data:', e.message);
+    state.items = [];
+    state.categories = [];
+    state.offers = [];
+    state.hours = DEFAULT_HOURS;
+  }
+
+  renderMenu();
+  renderOffers();
+  renderWorkingHours();
+}
+
+// ============================================================
+// RENDER: MENU
+// ============================================================
+function renderMenu() {
+  const tabsBar = document.getElementById('tabs-bar');
+  const container = document.getElementById('panels-container');
+  if (!tabsBar || !container) return;
+
+  if (!state.categories.length) {
+    tabsBar.innerHTML = '<div class="text-sm" style="color:#6e9671">لا توجد بيانات في قاعدة البيانات بعد. ربط اللوحة الآن بقاعدة Firebase لإضافة المنيو.</div>';
+    container.innerHTML = '<div class="text-center py-12 text-sm" style="color:#6e9671">المنيو الحالي غير مُحمَّل. قم بتحميل المنيو القديم من لوحة الإدارة.</div>';
+    return;
+  }
+
+  // Build tabs
+  tabsBar.innerHTML = state.categories.map((cat, i) =>
+    `<button class="tab-btn ${i === 0 ? 'active' : ''}" onclick="switchTab(${i}, this)">${escH(cat.label)}</button>`
+  ).join('');
+
+  // Build panels
+  container.innerHTML = state.categories.map((cat, i) => {
+    const catItems = state.items
+      .filter(it => it.category === cat.id)
+      .sort((a, b) => (a.order || 0) - (b.order || 0));
+
+    const cardsHTML = catItems.length
+      ? catItems.map(it => renderCard(it)).join('')
+      : `<div class="col-span-2 text-center py-12 text-sage-400 text-sm">لا توجد أصناف في هذا القسم حالياً</div>`;
+
+    return `<div class="section-panel ${i === 0 ? 'active' : ''}" id="panel-cat-${i}">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">${cardsHTML}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderCard(it) {
+  const minP = it.sizes && it.sizes.length ? it.sizes[it.sizes.length - 1].price : it.price;
+  const unavail = !it.available;
+  return `<div class="menu-card ${unavail ? 'unavailable-card' : ''}" ${unavail ? '' : `onclick="openModal(${escJsAttr(it.id)})"`}>
+    <div class="p-4">
+      <div class="flex items-start justify-between gap-3">
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2 flex-wrap mb-1">
+            <span class="text-2xl">${escH(it.emoji || '🍽️')}</span>
+            ${it.tag ? `<span class="offer-badge">${escH(it.tag)}</span>` : ''}
+            ${unavail ? `<span class="offer-badge" style="background:linear-gradient(135deg,#c0392b,#e74c3c)">غير متاح</span>` : ''}
+          </div>
+          <h3 class="font-bold text-base leading-tight mb-1" style="color:#273e2a">${escH(it.name)}</h3>
+          <p class="text-xs leading-relaxed lc2" style="color:#6e9671">${escH(it.includes || '')}</p>
+        </div>
+        <div class="flex-shrink-0"><div class="price-badge">${it.sizes ? 'من ' + minP : it.price} ج</div></div>
+      </div>
+      <div class="mt-3 flex items-center justify-between">
+        <span class="text-xs" style="color:#9bb99d">${unavail ? 'غير متاح مؤقتاً' : 'اضغط للتفاصيل'}</span>
+        ${!unavail ? `<div class="font-bold text-xs px-3 py-1.5 rounded-full" style="background:#e2ebe2;color:#304d33">اطلب ←</div>` : ''}
+      </div>
+    </div>
+  </div>`;
+}
+
+// ============================================================
+// RENDER: OFFERS
+// ============================================================
+function renderOffers() {
+  const grid = document.getElementById('offers-grid');
+  if (!grid) return;
+  if (!state.offers.length) {
+    grid.innerHTML = `<div class="col-span-3 text-center py-8 text-white opacity-60 text-sm">لا توجد عروض نشطة حالياً</div>`;
+    return;
+  }
+  grid.innerHTML = state.offers.map(o => `
+    <div class="rounded-2xl p-5 cursor-pointer hover:opacity-90 transition" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.1)" onclick="openOfferModal(${escJsAttr(JSON.stringify(o))})">
+      <div class="offer-badge mb-3">${escH(o.badge || '')}</div>
+      <h3 class="font-black text-lg mb-1 text-white">${escH(o.name)}</h3>
+      <p class="text-sm mb-3" style="color:#9bb99d">${escH(o.description || '')}</p>
+      <div class="flex items-center justify-between">
+        <span class="font-black text-2xl" style="color:#edc755">${o.price} <span class="text-sm font-medium" style="color:#9bb99d">ج</span></span>
+        <button class="font-bold text-sm px-4 py-2 rounded-xl" style="background:#c98f15;color:#1e3021">اطلب الآن</button>
+      </div>
+    </div>`).join('');
+}
+
+// ============================================================
+// RENDER: WORKING HOURS
+// ============================================================
+function renderWorkingHours() {
+  const grid = document.getElementById('hours-grid');
+  const banner = document.getElementById('open-now-banner');
+  const heroText = document.getElementById('hero-status-text');
+  const navStatus = document.getElementById('open-status-nav');
+  if (!grid) return;
+
+  const now = new Date();
+  const todayIdx = now.getDay(); // 0=Sunday
+  const currentHour = now.getHours();
+  const currentMin = now.getMinutes();
+
+  // Determine if open now: 8:00 AM to 3:00 AM next day
+  const openHour = 8, closeHour = 3;
+  const minuteOfDay = currentHour * 60 + currentMin;
+  const isOpen = minuteOfDay >= openHour * 60 || minuteOfDay < closeHour * 60;
+
+  const dayNames = ['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+
+  // Build hours from state or defaults
+  const hours = state.hours && Object.keys(state.hours).length ? state.hours : DEFAULT_HOURS;
+
+  grid.innerHTML = dayNames.map((name, idx) => {
+    const h = hours[idx] || {open:'8:00 AM', close:'3:00 AM', closed:false};
+    const isToday = idx === todayIdx;
+    const isClosed = h.closed;
+    return `<div class="hours-row ${isToday ? 'today' : ''}">
+      <div class="flex items-center gap-2">
+        ${isToday ? `<span class="text-xs font-black" style="color:#c98f15">اليوم</span>` : ''}
+        <span class="font-${isToday ? 'black' : 'semibold'} text-sm" style="color:#${isToday ? '273e2a' : '4d7850'}">${name}</span>
+      </div>
+      <div class="flex items-center gap-2">
+        ${isClosed
+          ? `<span class="closed-badge">&#x274C; مغلق</span>`
+          : `<span class="text-sm font-bold" style="color:#304d33">${escH(h.open || '8:00 AM')} — ${escH(h.close || '3:00 AM')}</span>`
+        }
+      </div>
+    </div>`;
+  }).join('');
+
+  // Open banner
+  if (isOpen) {
+    banner.style.display = 'block';
+    banner.innerHTML = `<span class="now-open-pulse inline-block mr-2"></span><span style="color:#1a7340;font-weight:800">&#x1F7E2; المطعم مفتوح الآن</span>`;
+    banner.style.background = '#d4edda';
+    if (heroText) heroText.textContent = 'مفتوح الآن • 8 صباحاً حتى 3 فجراً';
+    if (navStatus) { navStatus.textContent = '🟢 مفتوح'; navStatus.style.color = '#1a7340'; navStatus.classList.remove('hidden'); }
+  } else {
+    banner.style.display = 'block';
+    banner.innerHTML = `<span style="color:#c0392b;font-weight:800">&#x1F534; المطعم مغلق حالياً — يفتح الساعة 8 صباحاً</span>`;
+    banner.style.background = '#fde8e8';
+    if (heroText) heroText.textContent = 'مغلق حالياً • يفتح الساعة 8 صباحاً';
+    if (navStatus) { navStatus.textContent = '🔴 مغلق'; navStatus.style.color = '#c0392b'; navStatus.classList.remove('hidden'); }
+  }
+}
+
+// ============================================================
+// MODAL
+// ============================================================
+const WA_SVG = `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.083.534 4.044 1.472 5.759L.053 23.25a.75.75 0 0 0 .916.972l5.68-1.486A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.967 0-3.807-.538-5.384-1.47l-.383-.229-3.973 1.04 1.058-3.861-.248-.396A9.945 9.945 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>`;
+
+function openModal(itemId) {
+  const it = state.items.find(i => i.id === itemId);
+  if (!it || !it.available) return;
+  state.currentItem = it;
+  state.currentSize = it.sizes && it.sizes.length ? it.sizes[0] : null;
+  const price = state.currentSize ? state.currentSize.price : it.price;
+
+  const sizesHTML = it.sizes && it.sizes.length ? `
+    <div class="mb-5">
+      <p class="font-bold text-sm mb-3" style="color:#3b5f3e">اختر الحجم / النوع:</p>
+      <div class="flex flex-wrap gap-2" id="sz-btns">
+        ${it.sizes.map((s, i) => `<button class="size-btn ${i===0?'selected':''}" onclick="selSz(this,${Number(s.price)},${escJsAttr(s.label)})">${escH(s.label)} — ${s.price} ج</button>`).join('')}
+      </div>
+    </div>` : '';
+
+  showModal(`<div class="p-5">
+    <div class="w-10 h-1 rounded-full mx-auto mb-4" style="background:#e2ebe2"></div>
+    <div class="flex items-start justify-between mb-4">
+      <div class="flex items-center gap-3">
+        <div class="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl flex-shrink-0" style="background:#e2ebe2">${escH(it.emoji||'🍽️')}</div>
+        <div>
+          <h2 class="font-black text-lg leading-tight" style="color:#1e3021">${escH(it.name)}</h2>
+          <p class="text-sm mt-0.5" style="color:#6e9671">${escH(it.description||'')}</p>
+        </div>
+      </div>
+      <button onclick="closeModal()" class="w-9 h-9 rounded-full flex items-center justify-center text-lg flex-shrink-0" style="background:#e2ebe2;color:#3b5f3e;border:none;cursor:pointer">&#x2715;</button>
+    </div>
+    ${it.tag ? `<div class="offer-badge mb-4">${escH(it.tag)}</div>` : ''}
+    <div class="rounded-xl p-4 mb-5 border" style="background:#f4f7f4;border-color:#e2ebe2">
+      <p class="font-bold text-sm mb-2" style="color:#3b5f3e">&#x1F4E6; يشمل الطلب:</p>
+      <p class="text-sm leading-relaxed" style="color:#4d7850">${escH(it.includes||'')}</p>
+    </div>
+    ${sizesHTML}
+    <div class="flex items-center justify-between mb-5 rounded-xl p-4" style="background:#fdf9ec;border:1px solid #f4de95">
+      <div>
+        <p class="text-sm" style="color:#6e9671">السعر الإجمالي</p>
+        <p class="font-black text-2xl" style="color:#1e3021" id="modal-price">${price} <span class="text-base font-medium" style="color:#9bb99d">جنيه</span></p>
+      </div>
+      <div class="text-3xl">${escH(it.emoji||'🍽️')}</div>
+    </div>
+    <div class="rounded-xl p-3 mb-5 text-xs" style="background:#f4f7f4;border:1px solid #e2ebe2;color:#6e9671">
+      <span class="font-semibold" style="color:#304d33">إضافات:</span> بطاطس +10 ج &nbsp;|&nbsp; جبنة موتزاريلا +15 ج &nbsp;|&nbsp; لحوم +50 ج
+    </div>
+    <button class="wa-order-btn" onclick="orderWA()">${WA_SVG} اطلب عبر واتساب</button>
+    <button onclick="window.location.href='tel:01210226682'" class="mt-3 w-full flex items-center justify-center gap-2 font-bold text-sm py-3 rounded-xl" style="background:#e2ebe2;color:#273e2a;border:none;cursor:pointer;font-family:Cairo,sans-serif">&#x1F4DE; اتصل بنا مباشرة</button>
+  </div>`);
+}
+
+function openOfferModal(o) {
+  if (typeof o === 'string') { try { o = JSON.parse(o); } catch(e) { return; } }
+  state.currentItem = {name:o.name, price:o.price, emoji:'🎉', description:o.name, includes:o.includes||''};
+  state.currentSize = null;
+  showModal(`<div class="p-5">
+    <div class="w-10 h-1 rounded-full mx-auto mb-4" style="background:#e2ebe2"></div>
+    <div class="flex items-start justify-between mb-4">
+      <div class="flex items-center gap-3">
+        <div class="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl flex-shrink-0" style="background:#faf0cc">&#x1F389;</div>
+        <div><h2 class="font-black text-lg leading-tight" style="color:#1e3021">${escH(o.name)}</h2><p class="text-sm font-semibold mt-0.5" style="color:#c98f15">عرض خاص</p></div>
+      </div>
+      <button onclick="closeModal()" class="w-9 h-9 rounded-full flex items-center justify-center text-lg" style="background:#e2ebe2;color:#3b5f3e;border:none;cursor:pointer">&#x2715;</button>
+    </div>
+    <div class="rounded-xl p-4 mb-5 border" style="background:#f4f7f4;border-color:#e2ebe2">
+      <p class="font-bold text-sm mb-2" style="color:#3b5f3e">&#x1F4E6; يشمل:</p>
+      <p class="text-sm leading-relaxed" style="color:#4d7850">${escH(o.includes||'')}</p>
+    </div>
+    <div class="flex items-center justify-between mb-5 rounded-xl p-4" style="background:#fdf9ec;border:1px solid #f4de95">
+      <div><p class="text-sm" style="color:#6e9671">سعر العرض</p><p class="font-black text-2xl" style="color:#1e3021">${o.price} <span class="text-base font-medium" style="color:#9bb99d">جنيه</span></p></div>
+      <div class="text-3xl">&#x1F4B0;</div>
+    </div>
+    <button class="wa-order-btn" onclick="orderWA()">${WA_SVG} اطلب هذا العرض واتساب</button>
+    <button onclick="window.location.href='tel:01210226682'" class="mt-3 w-full flex items-center justify-center gap-2 font-bold text-sm py-3 rounded-xl" style="background:#e2ebe2;color:#273e2a;border:none;cursor:pointer;font-family:Cairo,sans-serif">&#x1F4DE; اتصل بنا مباشرة</button>
+  </div>`);
+}
+
+function showModal(html) {
+  document.getElementById('modal-box').innerHTML = html;
+  document.getElementById('item-modal').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+  document.getElementById('item-modal').style.display = 'none';
+  document.body.style.overflow = '';
+  state.currentItem = null; state.currentSize = null;
+}
+
+function closeModalOnBg(e) { if (e.target.id === 'item-modal') closeModal(); }
+
+function selSz(btn, price, label) {
+  state.currentSize = {p: price, l: label};
+  document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  const el = document.getElementById('modal-price');
+  if (el) el.innerHTML = `${price} <span class="text-base font-medium" style="color:#9bb99d">جنيه</span>`;
+}
+
+function orderWA() {
+  if (!state.currentItem) return;
+  const price = state.currentSize ? state.currentSize.p : state.currentItem.price;
+  const sLabel = state.currentSize ? ` (${state.currentSize.l})` : '';
+  const msg = `السلام عليكم، أريد الطلب من مطعم البرنس السوري 🍽️\n\n🛒 *${state.currentItem.name}${sLabel}*\n💰 السعر: ${price} جنيه\n\nأرجو تأكيد الطلب وتحديد وقت التوصيل. شكراً 🙏`;
+  window.open('https://wa.me/201210226682?text=' + encodeURIComponent(msg), '_blank');
+}
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+function switchTab(i, btn) {
+  document.querySelectorAll('.section-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  const panel = document.getElementById('panel-cat-' + i);
+  if (panel) panel.classList.add('active');
+  btn.classList.add('active');
+  state.activeTabIndex = i;
+  btn.scrollIntoView({behavior:'smooth', inline:'center', block:'nearest'});
+}
+
+function navTo(id, btn) {
+  document.querySelectorAll('.bottom-nav-item').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById(id)?.scrollIntoView({behavior:'smooth'});
+}
+
+function scrollToMenu() {
+  document.getElementById('menu')?.scrollIntoView({behavior:'smooth'});
+  document.querySelectorAll('.bottom-nav-item').forEach(b => b.classList.remove('active'));
+  document.getElementById('nav-menu')?.classList.add('active');
+}
+
+// Scroll spy
+function initScrollSpy() {
+  const secs = [{id:'home',nav:'nav-home'},{id:'menu',nav:'nav-menu'},{id:'offers',nav:'nav-offers'},{id:'contact',nav:'nav-contact'}];
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        const m = secs.find(s => s.id === e.target.id);
+        if (m) { document.querySelectorAll('.bottom-nav-item').forEach(b => b.classList.remove('active')); document.getElementById(m.nav)?.classList.add('active'); }
+      }
+    });
+  }, {threshold:0.35});
+  secs.forEach(s => { const el = document.getElementById(s.id); if (el) obs.observe(el); });
+}
+
+// Touch swipe tabs
+(function(){
+  let sx = 0;
+  const c = document.getElementById('tabs-container');
+  if (!c) return;
+  c.addEventListener('touchstart', e => { sx = e.touches[0].clientX; }, {passive:true});
+  c.addEventListener('touchend', e => {
+    const diff = sx - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 50) {
+      const tabs = [...document.querySelectorAll('.tab-btn')];
+      const ai = state.activeTabIndex;
+      const ni = Math.max(0, Math.min(ai + (diff > 0 ? 1 : -1), tabs.length - 1));
+      switchTab(ni, tabs[ni]);
+    }
+  }, {passive:true});
+})();
+
+// ============================================================
+// UTILS
+// ============================================================
+function escH(str) {
+  if (typeof str !== 'string') return '';
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function escAttr(str) {
+  if (typeof str !== 'string') return '';
+  return str.replace(/'/g, "\\'").replace(/"/g, '\\"');
+}
+function escJsAttr(value) {
+  return JSON.stringify(String(value))
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function showToast(msg, duration=2500) {
+  const t = document.getElementById('toast');
+  if (!t) return;
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), duration);
+}
+
+// ESC close modal
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+// ============================================================
+// INIT
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+  initScrollSpy();
+  loadAll();
+});
+</script>
+</body>
+</html>
